@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  server:
+    build: ./server
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=tictactoe-jwt-secret-2024-change-me
+      - ENCRYPTION_KEY=mySecretEncKey32CharactersLong!
+      - DB_PATH=/app/data/tictactoe.db
+      - FIREBASE_WEB_API_KEY=
+    volumes:
+      - server-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  server-data:

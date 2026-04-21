@@ -43,3 +43,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Server secrets/runtime state
+/server/.env
+/server/data/*.db
+/server/data/*.db-wal
+/server/data/*.db-shm

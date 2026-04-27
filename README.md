@@ -138,7 +138,7 @@ flutter build apk --release --dart-define=SERVER_BASE_URL=https://your-service.o
 
 If your Git host rejects large files, upload the same APK to a GitHub Release/Drive/Dropbox and paste the public URL here:
 
-- APK download URL: `<ADD_PUBLIC_APK_URL_HERE>`
+- APK download URL:  https://drive.google.com/file/d/1Tc7QOS1E_jkuQkcW8Gtzn90Iduox3spk/view?usp=drive_link
 
 #### Option 1: Install APK on Android Device
 
@@ -167,55 +167,6 @@ To test multiplayer:
 3. Register two different accounts
 4. Search for the other player and send a game invite
 5. Accept the invite on the other device — the game begins!
-
-## Email Verification (Mandatory Review Setup)
-
-For mandatory review criteria, configure SMTP so users receive real verification/reset emails.
-
-### SMTP setup
-
-1. Copy `server/.env.example` to `server/.env`
-2. Fill the following values:
-
-```env
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-EMAIL_FROM=your_email@gmail.com
-BASE_URL=http://localhost:3000
-FIREBASE_WEB_API_KEY=your_firebase_web_api_key
-```
-
-3. Start backend using Docker or `server/start.ps1`
-4. Verify `/api/health` returns `"emailMode":"smtp"`
-
-### Fallback mode (development only)
-
-Without SMTP configuration, the server runs in **dev-console mode** and prints verification/reset codes to terminal:
-
-```
-=== EMAIL (dev mode) ===
-To: user@example.com
-Verification code: 482901
-========================
-```
-
-Use fallback mode only for local development, not for final review demonstration.
-
-## Reviewer Demo Checklist (10 minutes)
-
-1. Start backend (`docker compose up --build`) and show `emailMode` is `smtp` in `/api/health`
-2. Install and run APK on emulator/device
-3. Register two users and show verification email arrives in inbox
-4. Show duplicate email/username validation errors
-5. Show weak password validation error
-6. Send invite, accept invite, and start game
-7. Make a valid move and an invalid move (invalid rejected in real-time)
-8. Show 5/10/15 timer options and active timer switching
-9. Trigger restart request and let 30s timeout expire
-10. Disconnect one client and show 2-minute pause countdown + reconnect/forfeit behavior
 
 ## Game Features
 

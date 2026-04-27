@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
@@ -14,6 +15,8 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = true;
   String? _error;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  static const String _tokenKey = 'auth_token';
+  static const String _userKey = 'auth_user';
 
   AuthProvider({required this.api, required this.socket}) {
     _restoreSession();
@@ -29,20 +32,49 @@ class AuthProvider extends ChangeNotifier {
     try {
       await _firebaseAuth.authStateChanges().first;
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getString('auth_token');
+      final saved = prefs.getString(_tokenKey);
+      final savedUserJson = prefs.getString(_userKey);
       if (saved != null) {
         _token = saved;
         api.setToken(saved);
-        final res = await api.getMe();
-        if (res.containsKey('user')) {
-          _user = UserModel.fromJson(res['user'] as Map<String, dynamic>);
-          await socket.connect(saved);
-        } else {
-          await _clearSession();
+        if (savedUserJson != null) {
+          try {
+            _user = UserModel.fromJson(
+              jsonDecode(savedUserJson) as Map<String, dynamic>,
+            );
+          } catch (_) {
+            // Ignore malformed cached user JSON.
+          }
+        }
+        try {
+          final res = await api.getMe();
+          if (res.containsKey('user')) {
+            _user = UserModel.fromJson(res['user'] as Map<String, dynamic>);
+            await _persistSession();
+            await socket.connect(saved);
+          } else {
+            final err = (res['error'] as String?)?.toLowerCase() ?? '';
+            final unauthorized = err.contains('unauthorized') ||
+                err.contains('invalid token') ||
+                err.contains('jwt');
+            if (unauthorized) {
+              await _clearSession();
+            } else if (_user != null) {
+              // Keep local session when backend is temporarily unavailable.
+              await socket.connect(saved);
+            }
+          }
+        } catch (_) {
+          if (_user != null) {
+            // Network/server temporary failure: keep local session.
+            await socket.connect(saved);
+          } else {
+            await _clearSession();
+          }
         }
       }
     } catch (_) {
-      await _clearSession();
+      // Do not force-logout on transient startup errors.
     }
     _isLoading = false;
     notifyListeners();
@@ -77,8 +109,7 @@ class AuthProvider extends ChangeNotifier {
       _token = res['token'] as String;
       _user = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       api.setToken(_token);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', _token!);
+      await _persistSession();
       await socket.connect(_token!);
       _isLoading = false;
       notifyListeners();
@@ -120,8 +151,7 @@ class AuthProvider extends ChangeNotifier {
       _token = res['token'] as String;
       _user = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       api.setToken(_token);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', _token!);
+      await _persistSession();
       await socket.connect(_token!);
       _isLoading = false;
       notifyListeners();
@@ -158,8 +188,7 @@ class AuthProvider extends ChangeNotifier {
       _token = res['token'] as String;
       _user = UserModel.fromJson(res['user'] as Map<String, dynamic>);
       api.setToken(_token);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('auth_token', _token!);
+      await _persistSession();
       notifyListeners();
       return true;
     } on FirebaseAuthException catch (e) {
@@ -220,7 +249,15 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     api.setToken(null);
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
+  }
+
+  Future<void> _persistSession() async {
+    if (_token == null || _user == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, _token!);
+    await prefs.setString(_userKey, jsonEncode(_user!.toJson()));
   }
 
   void clearError() {

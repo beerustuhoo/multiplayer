@@ -229,6 +229,35 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
+    if (!game.isConnected) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppTheme.error.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off, color: AppTheme.error, size: 18),
+            const SizedBox(width: 8),
+            const Text(
+              'Connection lost',
+              style: TextStyle(
+                color: AppTheme.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: game.isReconnecting ? null : () => game.reconnectNow(),
+              child: Text(game.isReconnecting ? 'Reconnecting...' : 'Reconnect'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(

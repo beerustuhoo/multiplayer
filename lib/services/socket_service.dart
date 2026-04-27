@@ -25,6 +25,19 @@ class SocketService {
     await _doConnect();
   }
 
+  Future<void> reconnectNow() async {
+    if (_token == null || _token!.isEmpty) return;
+    _shouldReconnect = true;
+    _reconnectTimer?.cancel();
+    try {
+      await _socket?.close();
+    } catch (_) {}
+    _socket = null;
+    _isConnected = false;
+    _notifyConnectionListeners(false);
+    await _doConnect();
+  }
+
   Future<void> _doConnect() async {
     try {
       _socket = await WebSocket.connect(AppConstants.wsUrl);

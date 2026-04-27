@@ -20,6 +20,15 @@ class UserModel {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'email': email,
+      'emailVerified': emailVerified,
+    };
+  }
+
   UserModel copyWith({bool? emailVerified}) {
     return UserModel(
       id: id,

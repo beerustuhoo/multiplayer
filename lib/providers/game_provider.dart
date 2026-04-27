@@ -20,6 +20,7 @@ class GameProvider extends ChangeNotifier {
   Map<String, dynamic>? _restartRequest;
   Map<String, dynamic>? _disconnectInfo;
   bool _listenersSetup = false;
+  bool _isReconnecting = false;
 
   GameProvider({required this.api, required this.socket});
 
@@ -31,6 +32,7 @@ class GameProvider extends ChangeNotifier {
   Map<String, dynamic>? get gameOverInfo => _gameOverInfo;
   Map<String, dynamic>? get restartRequest => _restartRequest;
   Map<String, dynamic>? get disconnectInfo => _disconnectInfo;
+  bool get isReconnecting => _isReconnecting;
 
   void setupListeners() {
     if (_listenersSetup) return;
@@ -38,6 +40,11 @@ class GameProvider extends ChangeNotifier {
 
     socket.addConnectionListener((connected) {
       _isConnected = connected;
+      if (connected && _currentGame != null) {
+        socket.emit('join_game', {'gameId': _currentGame!.id});
+        _reloadCurrentGameState();
+        _startTimerTick();
+      }
       notifyListeners();
     });
     _isConnected = socket.isConnected;
@@ -236,6 +243,27 @@ class GameProvider extends ChangeNotifier {
   void clearGameOver() {
     _gameOverInfo = null;
     notifyListeners();
+  }
+
+  Future<void> reconnectNow() async {
+    if (_isReconnecting) return;
+    _isReconnecting = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await socket.reconnectNow();
+      if (_currentGame != null) {
+        socket.emit('join_game', {'gameId': _currentGame!.id});
+        await _reloadCurrentGameState();
+        _startTimerTick();
+      }
+    } catch (_) {
+      _error = 'Reconnect failed. Please try again.';
+      _autoClearError();
+    } finally {
+      _isReconnecting = false;
+      notifyListeners();
+    }
   }
 
   void _autoClearError() {

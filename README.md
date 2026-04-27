@@ -90,30 +90,24 @@ The server starts on `http://localhost:3000`.
 
 ### 2. Configure the Flutter App
 
-Edit `lib/config/constants.dart` to point to your server:
+This project uses `SERVER_BASE_URL` at build time, so you do not need to edit source code to switch environments.
 
-```dart
-// For Android emulator connecting to host machine:
-static const String serverHost = '10.0.2.2';
-
-// For iOS simulator:
-static const String serverHost = '127.0.0.1';
-
-// For physical device (use your computer's LAN IP):
-static const String serverHost = '192.168.1.100';
-```
+- Local backend example:
+  - `--dart-define=SERVER_BASE_URL=http://10.0.2.2:3000` (Android emulator)
+- Render/backend URL example:
+  - `--dart-define=SERVER_BASE_URL=https://your-service.onrender.com`
 
 ### 3. Run the Flutter App
 
 ```bash
 flutter pub get
-flutter run
+flutter run --dart-define=SERVER_BASE_URL=http://10.0.2.2:3000
 ```
 
 ### 4. Build APK
 
 ```bash
-flutter build apk --release
+flutter build apk --release --dart-define=SERVER_BASE_URL=https://your-service.onrender.com
 ```
 
 The APK will be at `build/app/outputs/flutter-apk/app-release.apk`.
@@ -134,7 +128,13 @@ This starts the server with all dependencies — no manual runtime or library in
 
 Prebuilt APK location in this repository/workspace:
 
-- `build/app/outputs/flutter-apk/app-release.apk` (47.4MB)
+- `build/app/outputs/flutter-apk/app-release.apk`
+
+Recommended review build command:
+
+```bash
+flutter build apk --release --dart-define=SERVER_BASE_URL=https://your-service.onrender.com
+```
 
 If your Git host rejects large files, upload the same APK to a GitHub Release/Drive/Dropbox and paste the public URL here:
 
@@ -185,6 +185,7 @@ SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_app_password
 EMAIL_FROM=your_email@gmail.com
 BASE_URL=http://localhost:3000
+FIREBASE_WEB_API_KEY=your_firebase_web_api_key
 ```
 
 3. Start backend using Docker or `server/start.ps1`

@@ -1,12 +1,34 @@
 class AppConstants {
-  /// Change to your server's IP address.
+  /// Optional production base URL.
+  /// Example: --dart-define=SERVER_BASE_URL=https://your-app.onrender.com
+  static const String _serverBaseUrl = String.fromEnvironment(
+    'SERVER_BASE_URL',
+    defaultValue: '',
+  );
+
+  /// Local fallback defaults.
   /// Android emulator → 10.0.2.2 maps to host localhost.
-  /// iOS simulator → 127.0.0.1 works.
-  /// Physical device → use your computer's LAN IP.
   static const String serverHost = '10.0.2.2';
   static const int serverPort = 3000;
-  static String get serverUrl => 'http://$serverHost:$serverPort';
-  static String get wsUrl => 'ws://$serverHost:$serverPort/ws';
+
+  static bool get _hasCustomBaseUrl => _serverBaseUrl.trim().isNotEmpty;
+
+  static String get serverUrl {
+    if (_hasCustomBaseUrl) {
+      return _serverBaseUrl.trim().replaceAll(RegExp(r'/$'), '');
+    }
+    return 'http://$serverHost:$serverPort';
+  }
+
+  static String get wsUrl {
+    if (_hasCustomBaseUrl) {
+      final normalized = Uri.parse(serverUrl);
+      final wsScheme = normalized.scheme == 'https' ? 'wss' : 'ws';
+      return normalized.replace(scheme: wsScheme, path: '/ws').toString();
+    }
+    return 'ws://$serverHost:$serverPort/ws';
+  }
+
   static String get apiUrl => '$serverUrl/api';
 
   static const Map<String, int> timeControls = {

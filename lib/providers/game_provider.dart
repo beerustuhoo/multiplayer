@@ -198,7 +198,6 @@ class GameProvider extends ChangeNotifier {
           _currentGame!.status == 'playing' &&
           !_currentGame!.paused) {
         socket.emit('check_timer', {'gameId': _currentGame!.id});
-        notifyListeners();
       }
     });
   }

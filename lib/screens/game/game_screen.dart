@@ -19,6 +19,12 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   bool _historyOpen = false;
 
+  Future<void> _exitGameToHome() async {
+    context.read<GameProvider>().leaveGame();
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+  }
+
   int _computeRemainingMs(
       int storedTimer, String currentTurn, String thisMark, int? lastMoveTime) {
     if (currentTurn != thisMark || lastMoveTime == null) return storedTimer;
@@ -62,15 +68,18 @@ class _GameScreenState extends State<GameScreen> {
       if (wl != null) winLine = List<int>.from(wl as List);
     }
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _exitGameToHome();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Game'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            game.leaveGame();
-            Navigator.pop(context);
-          },
+          onPressed: _exitGameToHome,
         ),
         actions: [
           const ConnectionStatus(),
@@ -166,6 +175,7 @@ class _GameScreenState extends State<GameScreen> {
 
       // Restart request dialog
       bottomSheet: _buildBottomOverlay(game, userId),
+      ),
     );
   }
 

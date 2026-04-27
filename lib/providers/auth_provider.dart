@@ -96,7 +96,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> login(String email, String password) async {
+  Future<bool> login(String email, String password, {String? username}) async {
     _error = null;
     _isLoading = true;
     notifyListeners();
@@ -110,7 +110,7 @@ class AuthProvider extends ChangeNotifier {
         notifyListeners();
         return false;
       }
-      final res = await api.firebaseSync(idToken);
+      final res = await api.firebaseSync(idToken, username: username);
       if (res.containsKey('error')) {
         _error = res['error'] as String;
         _isLoading = false;

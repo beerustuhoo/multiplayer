@@ -17,6 +17,41 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscure = true;
   bool _loading = false;
 
+  Future<String?> _askUsernameForFirstLogin() async {
+    final controller = TextEditingController();
+    String? result;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Choose a username'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.done,
+          decoration: const InputDecoration(hintText: 'Username'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final value = controller.text.trim();
+              if (value.isNotEmpty) {
+                result = value;
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result;
+  }
+
   @override
   void dispose() {
     _emailC.dispose();
@@ -28,7 +63,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
     final auth = context.read<AuthProvider>();
-    final ok = await auth.login(_emailC.text.trim(), _passC.text);
+    final email = _emailC.text.trim();
+    final password = _passC.text;
+    var ok = await auth.login(email, password);
+    if (!ok && auth.error == 'Username required for first sign in') {
+      final username = await _askUsernameForFirstLogin();
+      if (username != null) {
+        ok = await auth.login(email, password, username: username);
+      }
+    }
     if (!mounted) return;
     setState(() => _loading = false);
     if (ok) {
